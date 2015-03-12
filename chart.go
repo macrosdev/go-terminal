@@ -2,6 +2,10 @@ package termui
 
 import "fmt"
 
+const VDASH = '┊'
+const HDASH = '┈'
+const ORIGIN = '└'
+
 // only 16 possible combinations, why bother
 var braillePatterns = map[[2]int]rune{
 	[2]int{0, 0}: '⣀',
