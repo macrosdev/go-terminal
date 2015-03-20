@@ -1,7 +1,6 @@
 package termui
 
-// A ColorScheme represents the current look-and-feel of the dashboard.
-type ColorScheme struct {
+type colorScheme struct {
 	BodyBg            Attribute
 	BlockBg           Attribute
 	HasBorder         bool
@@ -25,9 +24,9 @@ type ColorScheme struct {
 }
 
 // default color scheme depends on the user's terminal setting.
-var themeDefault = ColorScheme{HasBorder: true}
+var themeDefault = colorScheme{HasBorder: true}
 
-var themeHelloWorld = ColorScheme{
+var themeHelloWorld = colorScheme{
 	BodyBg:            ColorBlack,
 	BlockBg:           ColorBlack,
 	HasBorder:         true,
@@ -52,18 +51,6 @@ var themeHelloWorld = ColorScheme{
 
 var theme = themeDefault // global dep
 
-// Theme returns the currently used theme.
-func Theme() ColorScheme {
-	return theme
-}
-
-// SetTheme sets a new, custom theme.
-func SetTheme(newTheme ColorScheme) {
-	theme = newTheme
-}
-
-// UseTheme sets a predefined scheme. Currently available: "hello-world" and
-// "black-and-white".
 func UseTheme(th string) {
 	switch th {
 	case "helloworld":
