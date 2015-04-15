@@ -79,5 +79,5 @@ func (g *Gauge) Buffer() []Point {
 		}
 		ps = append(ps, p)
 	}
-	return g.Block.chopOverflow(ps)
+	return ps
 }

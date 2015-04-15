@@ -67,5 +67,5 @@ func (p *Par) Buffer() []Point {
 		k++
 		j += w
 	}
-	return p.Block.chopOverflow(ps)
+	return ps
 }
