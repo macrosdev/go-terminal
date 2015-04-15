@@ -14,8 +14,8 @@ type GridBufferer interface {
 }
 
 // row builds a layout tree
-type Row struct {
-	Cols   []*Row       //children
+type row struct {
+	Cols   []*row       //children
 	Widget GridBufferer // root
 	X      int
 	Y      int
@@ -26,7 +26,7 @@ type Row struct {
 }
 
 // calculate and set the underlying layout tree's x, y, height and width.
-func (r *Row) calcLayout() {
+func (r *row) calcLayout() {
 	r.assignWidth(r.Width)
 	r.Height = r.solveHeight()
 	r.assignX(r.X)
@@ -34,27 +34,44 @@ func (r *Row) calcLayout() {
 }
 
 // tell if the node is leaf in the tree.
-func (r *Row) isLeaf() bool {
+func (r *row) isLeaf() bool {
 	return r.Cols == nil || len(r.Cols) == 0
 }
 
-func (r *Row) isRenderableLeaf() bool {
+func (r *row) isRenderableLeaf() bool {
 	return r.isLeaf() && r.Widget != nil
 }
 
 // assign widgets' (and their parent rows') width recursively.
-func (r *Row) assignWidth(w int) {
-	cw := int(float64(w*r.Span) / 12)
-	r.SetWidth(cw)
+func (r *row) assignWidth(w int) {
+	r.SetWidth(w)
 
-	for i := range r.Cols {
+	accW := 0                            // acc span and offset
+	calcW := make([]int, len(r.Cols))    // calculated width
+	calcOftX := make([]int, len(r.Cols)) // computated start position of x
+
+	for i, c := range r.Cols {
+		accW += c.Span + c.Offset
+		cw := int(float64(c.Span*r.Width) / 12.0)
+
+		if i >= 1 {
+			calcOftX[i] = calcOftX[i-1] +
+				calcW[i-1] +
+				int(float64(r.Cols[i-1].Offset*r.Width)/12.0)
+		}
+
+		// use up the space if it is the last col
+		if i == len(r.Cols)-1 && accW == 12 {
+			cw = r.Width - calcOftX[i]
+		}
+		calcW[i] = cw
 		r.Cols[i].assignWidth(cw)
 	}
 }
 
 // bottom up calc and set rows' (and their widgets') height,
 // return r's total height.
-func (r *Row) solveHeight() int {
+func (r *row) solveHeight() int {
 	if r.isRenderableLeaf() {
 		r.Height = r.Widget.GetHeight()
 		return r.Widget.GetHeight()
@@ -79,23 +96,23 @@ func (r *Row) solveHeight() int {
 }
 
 // recursively assign x position for r tree.
-func (r *Row) assignX(x int) {
+func (r *row) assignX(x int) {
 	r.SetX(x)
 
 	if !r.isLeaf() {
 		acc := 0
 		for i, c := range r.Cols {
+			if c.Offset != 0 {
+				acc += int(float64(c.Offset*r.Width) / 12.0)
+			}
 			r.Cols[i].assignX(x + acc)
 			acc += c.Width
-			if c.Offset != 0 {
-				acc += int(float64(c.Offset*c.Width) / float64(12*c.Span))
-			}
 		}
 	}
 }
 
 // recursively assign y position to r.
-func (r *Row) assignY(y int) {
+func (r *row) assignY(y int) {
 	r.SetY(y)
 
 	if r.isLeaf() {
@@ -113,12 +130,12 @@ func (r *Row) assignY(y int) {
 }
 
 // GetHeight implements GridBufferer interface.
-func (r Row) GetHeight() int {
+func (r row) GetHeight() int {
 	return r.Height
 }
 
 // SetX implements GridBufferer interface.
-func (r *Row) SetX(x int) {
+func (r *row) SetX(x int) {
 	r.X = x
 	if r.Widget != nil {
 		r.Widget.SetX(x)
@@ -126,7 +143,7 @@ func (r *Row) SetX(x int) {
 }
 
 // SetY implements GridBufferer interface.
-func (r *Row) SetY(y int) {
+func (r *row) SetY(y int) {
 	r.Y = y
 	if r.Widget != nil {
 		r.Widget.SetY(y)
@@ -134,7 +151,7 @@ func (r *Row) SetY(y int) {
 }
 
 // SetWidth implements GridBufferer interface.
-func (r *Row) SetWidth(w int) {
+func (r *row) SetWidth(w int) {
 	r.Width = w
 	if r.Widget != nil {
 		r.Widget.SetWidth(w)
@@ -143,7 +160,7 @@ func (r *Row) SetWidth(w int) {
 
 // Buffer implements Bufferer interface,
 // recursively merge all widgets buffer
-func (r *Row) Buffer() []Point {
+func (r *row) Buffer() []Point {
 	merged := []Point{}
 
 	if r.isRenderableLeaf() {
@@ -187,7 +204,7 @@ func (r *Row) Buffer() []Point {
    ui.Render(ui.Body)
 */
 type Grid struct {
-	Rows    []*Row
+	Rows    []*row
 	Width   int
 	X       int
 	Y       int
@@ -195,29 +212,29 @@ type Grid struct {
 }
 
 // NewGrid returns *Grid with given rows.
-func NewGrid(rows ...*Row) *Grid {
+func NewGrid(rows ...*row) *Grid {
 	return &Grid{Rows: rows}
 }
 
 // AddRows appends given rows to Grid.
-func (g *Grid) AddRows(rs ...*Row) {
+func (g *Grid) AddRows(rs ...*row) {
 	g.Rows = append(g.Rows, rs...)
 }
 
 // NewRow creates a new row out of given columns.
-func NewRow(cols ...*Row) *Row {
-	rs := &Row{Span: 12, Cols: cols}
+func NewRow(cols ...*row) *row {
+	rs := &row{Span: 12, Cols: cols}
 	return rs
 }
 
 // NewCol accepts: widgets are LayoutBufferer or widgets is A NewRow.
 // Note that if multiple widgets are provided, they will stack up in the col.
-func NewCol(span, offset int, widgets ...GridBufferer) *Row {
-	r := &Row{Span: span, Offset: offset}
+func NewCol(span, offset int, widgets ...GridBufferer) *row {
+	r := &row{Span: span, Offset: offset}
 
 	if widgets != nil && len(widgets) == 1 {
 		wgt := widgets[0]
-		nw, isRow := wgt.(*Row)
+		nw, isRow := wgt.(*row)
 		if isRow {
 			r.Cols = nw.Cols
 		} else {
@@ -226,11 +243,11 @@ func NewCol(span, offset int, widgets ...GridBufferer) *Row {
 		return r
 	}
 
-	r.Cols = []*Row{}
+	r.Cols = []*row{}
 	ir := r
 	for _, w := range widgets {
-		nr := &Row{Span: 12, Widget: w}
-		ir.Cols = []*Row{nr}
+		nr := &row{Span: 12, Widget: w}
+		ir.Cols = []*row{nr}
 		ir = nr
 	}
 
