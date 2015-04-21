@@ -4,22 +4,22 @@
 
 package termui
 
-import "image"
-
 // Block is a base struct for all other upper level widgets,
 // consider it as css: display:block.
 // Normally you do not need to create it manually.
 type Block struct {
-	Area          image.Rectangle
-	innerArea     image.Rectangle
 	X             int
 	Y             int
-	Border        LabeledBorder
+	Border        labeledBorder
 	IsDisplay     bool
 	HasBorder     bool
-	Bg            Attribute
+	BgColor       Attribute
 	Width         int
 	Height        int
+	innerWidth    int
+	innerHeight   int
+	innerX        int
+	innerY        int
 	PaddingTop    int
 	PaddingBottom int
 	PaddingLeft   int
@@ -31,81 +31,75 @@ func NewBlock() *Block {
 	d := Block{}
 	d.IsDisplay = true
 	d.HasBorder = theme.HasBorder
-	d.Border.Left = true
-	d.Border.Right = true
-	d.Border.Top = true
-	d.Border.Bottom = true
-	d.Border.Bg = theme.BorderBg
-	d.Border.Fg = theme.BorderFg
-	d.Border.LabelBgClr = theme.BorderLabelTextBg
-	d.Border.LabelFgClr = theme.BorderLabelTextFg
-	d.Bg = theme.BlockBg
+	d.Border.BgColor = theme.BorderBg
+	d.Border.FgColor = theme.BorderFg
+	d.Border.LabelBgColor = theme.BorderLabelTextBg
+	d.Border.LabelFgColor = theme.BorderLabelTextFg
+	d.BgColor = theme.BlockBg
 	d.Width = 2
 	d.Height = 2
 	return &d
 }
 
-// Align computes box model
-func (d *Block) Align() {
-	d.Area.Min.X = d.X
-	d.Area.Min.Y = d.Y
-	d.Area.Max.X = d.X + d.Width - 1
-	d.Area.Max.Y = d.Y + d.Height - 1
-
-	d.innerArea.Min.X = d.X + d.PaddingLeft
-	d.innerArea.Min.Y = d.Y + d.PaddingTop
-	d.innerArea.Max.X = d.Area.Max.X - d.PaddingRight
-	d.innerArea.Max.Y = d.Area.Max.Y - d.PaddingBottom
-
-	d.Border.Area = d.Area
+// compute box model
+func (d *Block) align() {
+	d.innerWidth = d.Width - d.PaddingLeft - d.PaddingRight
+	d.innerHeight = d.Height - d.PaddingTop - d.PaddingBottom
+	d.innerX = d.X + d.PaddingLeft
+	d.innerY = d.Y + d.PaddingTop
 
 	if d.HasBorder {
-		switch {
-		case d.Border.Left:
-			d.innerArea.Min.X++
-			fallthrough
-		case d.Border.Right:
-			d.innerArea.Max.X--
-			fallthrough
-		case d.Border.Top:
-			d.innerArea.Min.Y++
-			fallthrough
-		case d.Border.Bottom:
-			d.innerArea.Max.Y--
-		}
+		d.innerHeight -= 2
+		d.innerWidth -= 2
+		d.Border.X = d.X
+		d.Border.Y = d.Y
+		d.Border.Width = d.Width
+		d.Border.Height = d.Height
+		d.innerX++
+		d.innerY++
 	}
+
+	if d.innerHeight < 0 {
+		d.innerHeight = 0
+	}
+	if d.innerWidth < 0 {
+		d.innerWidth = 0
+	}
+
 }
 
 // InnerBounds returns the internal bounds of the block after aligning and
 // calculating the padding and border, if any.
-func (d *Block) InnerBounds() image.Rectangle {
-	d.Align()
-	return d.innerArea
+func (d *Block) InnerBounds() (x, y, width, height int) {
+	d.align()
+	return d.innerX, d.innerY, d.innerWidth, d.innerHeight
 }
 
 // Buffer implements Bufferer interface.
 // Draw background and border (if any).
-func (d *Block) Buffer() Buffer {
-	d.Align()
+func (d *Block) Buffer() []Point {
+	d.align()
 
-	buf := NewBuffer()
-	buf.Area = d.Area
+	ps := []Point{}
 	if !d.IsDisplay {
-		return buf
+		return ps
 	}
 
-	// render border
 	if d.HasBorder {
-		buf.Union(d.Border.Buffer())
+		ps = d.Border.Buffer()
 	}
 
-	// render background
-	for p := range buf.CellMap {
-		if p.In(d.innerArea) {
-			buf.CellMap[p] = Cell{' ', ColorDefault, d.Bg}
+	for i := 0; i < d.innerWidth; i++ {
+		for j := 0; j < d.innerHeight; j++ {
+			p := Point{}
+			p.X = d.X + 1 + i
+			p.Y = d.Y + 1 + j
+			p.Ch = ' '
+			p.Bg = d.BgColor
+			ps = append(ps, p)
 		}
 	}
-	return buf
+	return ps
 }
 
 // GetHeight implements GridBufferer.
@@ -127,4 +121,22 @@ func (d *Block) SetY(y int) {
 // SetWidth implements GridBuffer interface, it sets block's width.
 func (d *Block) SetWidth(w int) {
 	d.Width = w
+}
+
+// chop the overflow parts
+func (d *Block) chopOverflow(ps []Point) []Point {
+	nps := make([]Point, 0, len(ps))
+	x := d.X
+	y := d.Y
+	w := d.Width
+	h := d.Height
+	for _, v := range ps {
+		if v.X >= x &&
+			v.X < x+w &&
+			v.Y >= y &&
+			v.Y < y+h {
+			nps = append(nps, v)
+		}
+	}
+	return nps
 }
