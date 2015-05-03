@@ -1,9 +1,7 @@
-# termui [![Build Status](https://travis-ci.org/gizak/termui.svg?branch=master)](https://travis-ci.org/gizak/termui) [![Doc Status](https://godoc.org/github.com/gizak/termui?status.png)](https://godoc.org/github.com/gizak/termui)
+# termui [![Build Status](https://travis-ci.org/gizak/termui.svg)](https://travis-ci.org/gizak/termui) [![Doc Status](https://godoc.org/github.com/gizak/termui?status.png)](https://godoc.org/github.com/gizak/termui)
 
-## Notice
-termui comes with ABSOLUTELY NO WARRANTY, and there is a breaking change coming up (see refactoring branch) which will change the `Bufferer` interface and many others. These changes reduce calculation overhead and introduce a new drawing buffer with better capacibilities. We will step into the next stage (call it beta) after merging these changes.
+---
 
-## Introduction
 Go terminal dashboard. Inspired by [blessed-contrib](https://github.com/yaronn/blessed-contrib), but purely in Go.
 
 Cross-platform, easy to compile, and fully-customizable.
@@ -114,6 +112,11 @@ The `helloworld` color scheme drops in some colors!
 
 <img src="./example/list.png" alt="list" type="image/png" width="200">
 
+#### Colored List
+[demo code](https://github.com/gizak/termui/blob/master/example/coloredList.go)
+
+TODO: Image (let's wait until the implementation is finished).
+
 #### Gauge
 [demo code](https://github.com/gizak/termui/blob/master/example/gauge.go)
 
@@ -128,11 +131,6 @@ The `helloworld` color scheme drops in some colors!
 [demo code](https://github.com/gizak/termui/blob/master/example/barchart.go)
 
 <img src="./example/barchart.png" alt="barchart" type="image/png" width="150">
-
-#### Mult-Bar / Stacked-Bar Chart
-[demo code](https://github.com/gizak/termui/blob/master/example/mbarchart.go)
-
-<img src="./example/mbarchart.png" alt="barchart" type="image/png" width="150">
 
 #### Sparklines
 [demo code](https://github.com/gizak/termui/blob/master/example/sparklines.go)
