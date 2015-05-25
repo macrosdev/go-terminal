@@ -11,11 +11,7 @@ func TestBlock_InnerBounds(t *testing.T) {
 
 	assert := func(name string, x, y, w, h int) {
 		t.Log(name)
-		area := b.InnerBounds()
-		cx := area.Min.X
-		cy := area.Min.Y
-		cw := area.Dx()
-		ch := area.Dy()
+		cx, cy, cw, ch := b.InnerBounds()
 		if cx != x {
 			t.Errorf("expected x to be %d but got %d", x, cx)
 		}
@@ -30,10 +26,10 @@ func TestBlock_InnerBounds(t *testing.T) {
 		}
 	}
 
-	b.Border = false
+	b.HasBorder = false
 	assert("no border, no padding", 10, 11, 12, 13)
 
-	b.Border = true
+	b.HasBorder = true
 	assert("border, no padding", 11, 12, 10, 11)
 
 	b.PaddingBottom = 2
