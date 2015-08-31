@@ -8,7 +8,7 @@ import tm "github.com/nsf/termbox-go"
 
 // Bufferer should be implemented by all renderable components.
 type Bufferer interface {
-	Buffer() []Point
+	Buffer() Buffer
 }
 
 // Init initializes termui library. This function should be called before any others.
@@ -18,12 +18,13 @@ func Init() error {
 	Body.X = 0
 	Body.Y = 0
 	Body.BgColor = theme.BodyBg
-	defer func() {
-		w, _ := tm.Size()
-		Body.Width = w
-		evtListen()
-	}()
-	return tm.Init()
+	if err := tm.Init(); err != nil {
+		return err
+	}
+	w, _ := tm.Size()
+	Body.Width = w
+	evtListen()
+	return nil
 }
 
 // Close finalizes termui library,
@@ -48,13 +49,18 @@ func TermHeight() int {
 
 // Render renders all Bufferer in the given order from left to right,
 // right could overlap on left ones.
-func Render(rs ...Bufferer) {
+func Render(bs ...Bufferer) {
+	// set tm bg
 	tm.Clear(tm.ColorDefault, toTmAttr(theme.BodyBg))
-	for _, r := range rs {
-		buf := r.Buffer()
-		for _, v := range buf {
-			tm.SetCell(v.X, v.Y, v.Ch, toTmAttr(v.Fg), toTmAttr(v.Bg))
+	for _, b := range bs {
+		buf := b.Buffer()
+		// set cels in buf
+		for p, c := range buf.CellMap {
+			if p.In(buf.Area) {
+				tm.SetCell(p.X, p.Y, c.Ch, toTmAttr(c.Fg), toTmAttr(c.Bg))
+			}
 		}
 	}
+	// render
 	tm.Flush()
 }

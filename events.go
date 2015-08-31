@@ -8,166 +8,140 @@
 
 package termui
 
-import "github.com/nsf/termbox-go"
+import (
+	"strings"
+	"sync"
+	"time"
 
-/***********************************termbox-go**************************************/
-
-type (
-	EventType uint8
-	Modifier  uint8
-	Key       uint16
+	"github.com/nsf/termbox-go"
 )
 
-// This type represents a termbox event. The 'Mod', 'Key' and 'Ch' fields are
-// valid if 'Type' is EventKey. The 'Width' and 'Height' fields are valid if
-// 'Type' is EventResize. The 'Err' field is valid if 'Type' is EventError.
 type Event struct {
-	Type   EventType // one of Event* constants
-	Mod    Modifier  // one of Mod* constants or 0
-	Key    Key       // one of Key* constants, invalid if 'Ch' is not 0
-	Ch     rune      // a unicode character
-	Width  int       // width of the screen
-	Height int       // height of the screen
-	Err    error     // error in case if input failed
-	MouseX int       // x coord of mouse
-	MouseY int       // y coord of mouse
-	N      int       // number of bytes written when getting a raw event
+	Type string
+	Path string
+	From string
+	To   string
+	Data interface{}
+	Time int64
 }
 
-const (
-	KeyF1 Key = 0xFFFF - iota
-	KeyF2
-	KeyF3
-	KeyF4
-	KeyF5
-	KeyF6
-	KeyF7
-	KeyF8
-	KeyF9
-	KeyF10
-	KeyF11
-	KeyF12
-	KeyInsert
-	KeyDelete
-	KeyHome
-	KeyEnd
-	KeyPgup
-	KeyPgdn
-	KeyArrowUp
-	KeyArrowDown
-	KeyArrowLeft
-	KeyArrowRight
-	key_min // see terminfo
-	MouseLeft
-	MouseMiddle
-	MouseRight
-)
-
-const (
-	KeyCtrlTilde      Key = 0x00
-	KeyCtrl2          Key = 0x00
-	KeyCtrlSpace      Key = 0x00
-	KeyCtrlA          Key = 0x01
-	KeyCtrlB          Key = 0x02
-	KeyCtrlC          Key = 0x03
-	KeyCtrlD          Key = 0x04
-	KeyCtrlE          Key = 0x05
-	KeyCtrlF          Key = 0x06
-	KeyCtrlG          Key = 0x07
-	KeyBackspace      Key = 0x08
-	KeyCtrlH          Key = 0x08
-	KeyTab            Key = 0x09
-	KeyCtrlI          Key = 0x09
-	KeyCtrlJ          Key = 0x0A
-	KeyCtrlK          Key = 0x0B
-	KeyCtrlL          Key = 0x0C
-	KeyEnter          Key = 0x0D
-	KeyCtrlM          Key = 0x0D
-	KeyCtrlN          Key = 0x0E
-	KeyCtrlO          Key = 0x0F
-	KeyCtrlP          Key = 0x10
-	KeyCtrlQ          Key = 0x11
-	KeyCtrlR          Key = 0x12
-	KeyCtrlS          Key = 0x13
-	KeyCtrlT          Key = 0x14
-	KeyCtrlU          Key = 0x15
-	KeyCtrlV          Key = 0x16
-	KeyCtrlW          Key = 0x17
-	KeyCtrlX          Key = 0x18
-	KeyCtrlY          Key = 0x19
-	KeyCtrlZ          Key = 0x1A
-	KeyEsc            Key = 0x1B
-	KeyCtrlLsqBracket Key = 0x1B
-	KeyCtrl3          Key = 0x1B
-	KeyCtrl4          Key = 0x1C
-	KeyCtrlBackslash  Key = 0x1C
-	KeyCtrl5          Key = 0x1D
-	KeyCtrlRsqBracket Key = 0x1D
-	KeyCtrl6          Key = 0x1E
-	KeyCtrl7          Key = 0x1F
-	KeyCtrlSlash      Key = 0x1F
-	KeyCtrlUnderscore Key = 0x1F
-	KeySpace          Key = 0x20
-	KeyBackspace2     Key = 0x7F
-	KeyCtrl8          Key = 0x7F
-)
-
-// Alt modifier constant, see Event.Mod field and SetInputMode function.
-const (
-	ModAlt Modifier = 0x01
-)
-
-// Event type. See Event.Type field.
-const (
-	EventKey EventType = iota
-	EventResize
-	EventMouse
-	EventError
-	EventInterrupt
-	EventRaw
-	EventNone
-)
-
-/**************************************end**************************************/
-
-// convert termbox.Event to termui.Event
-func uiEvt(e termbox.Event) Event {
-	event := Event{}
-	event.Type = EventType(e.Type)
-	event.Mod = Modifier(e.Mod)
-	event.Key = Key(e.Key)
-	event.Ch = e.Ch
-	event.Width = e.Width
-	event.Height = e.Height
-	event.Err = e.Err
-	event.MouseX = e.MouseX
-	event.MouseY = e.MouseY
-	event.N = e.N
-
-	return event
+var sysevt struct {
+	chs []chan Event
 }
 
-var evtChs = make([]chan Event, 0)
-
-// EventCh returns an output-only event channel.
-// This function can be called many times (multiplexer).
-func EventCh() <-chan Event {
-	out := make(chan Event)
-	evtChs = append(evtChs, out)
-	return out
+func newSysEvtFromTb(e termbox.Event) Event {
+	ne := Event{From: "/sys", Time: time.Now().Unix()}
+	return ne
 }
 
-// turn on event listener
-func evtListen() {
-	go func() {
-		for {
-			e := termbox.PollEvent()
-			// dispatch
-			for _, c := range evtChs {
-				go func(ch chan Event) {
-					ch <- uiEvt(e)
-				}(c)
-			}
+func hookSysEvt() {
+	sysevt.chs = make([]chan Event, 0)
+	for {
+		e := termbox.PollEvent()
+		for _, c := range sysevt.chs {
+			// shorten?
+			go func(ch chan Event, ev Event) { ch <- ev }(c, newSysEvtFromTb(e))
 		}
+	}
+}
+
+func NewSysEvtCh() chan Event {
+	ec := make(chan Event)
+	sysevt.chs = append(sysevt.chs, ec)
+	return ec
+}
+
+/*
+type evtCtl struct {
+	in      chan Event
+	out     chan Event
+	suspend chan int
+	recover chan int
+	close   chan int
+}
+
+func newEvtCtl() evtCtl {
+	ec := evtCtl{}
+	ec.in = make(chan Event)
+	ec.suspend = make(chan int)
+	ec.recover = make(chan int)
+	ec.close = make(chan int)
+	ec.out = make(chan Event)
+	return ec
+}
+
+*/
+//
+type EvtStream struct {
+	srcMap   map[string]chan Event
+	stream   chan Event
+	cache    map[string][]func(Event)
+	wg       sync.WaitGroup
+	Handlers map[string]func(Event)
+}
+
+func NewEvtStream() *EvtStream {
+	return &EvtStream{
+		srcMap: make(map[string]chan Event),
+		stream: make(chan Event),
+	}
+}
+
+func (es *EvtStream) Init() {
+
+	go func() {
+		es.wg.Wait()
+		close(es.stream)
 	}()
 }
+
+// a: /sys/bell
+// b: /sys
+// score: 1
+//
+// a: /sys
+// b: /usr
+// score: -1
+//
+// a: /sys
+// b: /
+// score: 0
+func MatchScore(a, b string) int {
+	sa := strings.Split(a, "/")
+	sb := strings.Split(b, "/")
+
+	score := -1
+	for i, s := range sa {
+		if i >= len(sb) {
+			break
+		}
+
+		if s != sb[i] {
+			return -1
+		}
+		score++
+	}
+
+	return score
+}
+
+func (es *EvtStream) Merge(ec chan Event) {
+	es.wg.Add(1)
+
+	go func(a chan Event) {
+		for n := range ec {
+			es.stream <- n
+		}
+		wg.Done()
+	}(ec)
+}
+
+/*
+func (es *EvtStream) hookup() {
+
+}
+
+func (es EvtStream) Subscribe(uri string) chan Event {
+
+}
+*/
