@@ -8,34 +8,21 @@
 
 package termui
 
-import "testing"
+import (
+	"errors"
+	"testing"
 
-var ps = []string{
-	"",
-	"/",
-	"/a",
-	"/b",
-	"/a/c",
-	"/a/b",
-	"/a/b/c",
-	"/a/b/c/d",
-	"/a/b/c/d/"}
+	termbox "github.com/nsf/termbox-go"
+	"github.com/stretchr/testify/assert"
+)
 
-func TestMatchScore(t *testing.T) {
-	chk := func(a, b string, s bool) {
-		if c := isPathMatch(a, b); c != s {
-			t.Errorf("\na:%s\nb:%s\nshould:%t\nactual:%t", a, b, s, c)
-		}
-	}
+type boxEvent termbox.Event
 
-	chk(ps[1], ps[1], true)
-	chk(ps[1], ps[2], true)
-	chk(ps[2], ps[1], false)
-	chk(ps[4], ps[1], false)
-	chk(ps[6], ps[2], false)
-	chk(ps[4], ps[5], false)
-}
+func TestUiEvt(t *testing.T) {
+	err := errors.New("This is a mock error")
+	event := boxEvent{3, 5, 2, 'H', 200, 500, err, 50, 30, 2}
+	expetced := Event{3, 5, 2, 'H', 200, 500, err, 50, 30, 2}
 
-func TestCrtEvt(t *testing.T) {
-
+	// We need to do that ugly casting so that vet does not complain
+	assert.Equal(t, uiEvt(termbox.Event(event)), expetced)
 }

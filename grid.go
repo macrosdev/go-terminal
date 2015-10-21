@@ -160,8 +160,8 @@ func (r *Row) SetWidth(w int) {
 
 // Buffer implements Bufferer interface,
 // recursively merge all widgets buffer
-func (r *Row) Buffer() Buffer {
-	merged := NewBuffer()
+func (r *Row) Buffer() []Point {
+	merged := []Point{}
 
 	if r.isRenderableLeaf() {
 		return r.Widget.Buffer()
@@ -169,13 +169,13 @@ func (r *Row) Buffer() Buffer {
 
 	// for those are not leaves but have a renderable widget
 	if r.Widget != nil {
-		merged.Merge(r.Widget.Buffer())
+		merged = append(merged, r.Widget.Buffer()...)
 	}
 
 	// collect buffer from children
 	if !r.isLeaf() {
 		for _, c := range r.Cols {
-			merged.Merge(c.Buffer())
+			merged = append(merged, c.Buffer()...)
 		}
 	}
 
@@ -267,13 +267,13 @@ func (g *Grid) Align() {
 }
 
 // Buffer implments Bufferer interface.
-func (g Grid) Buffer() Buffer {
-	buf := NewBuffer()
-
+func (g Grid) Buffer() []Point {
+	ps := []Point{}
 	for _, r := range g.Rows {
-		buf.Merge(r.Buffer())
+		ps = append(ps, r.Buffer()...)
 	}
-	return buf
+	return ps
 }
 
+// Body corresponds to the entire terminal display region.
 var Body *Grid

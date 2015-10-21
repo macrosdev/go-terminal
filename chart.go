@@ -74,8 +74,8 @@ type LineChart struct {
 // NewLineChart returns a new LineChart with current theme.
 func NewLineChart() *LineChart {
 	lc := &LineChart{Block: *NewBlock()}
-	lc.AxesColor = ThemeAttr("linechart.axes.fg")
-	lc.LineColor = ThemeAttr("linechart.line.fg")
+	lc.AxesColor = theme.LineChartAxes
+	lc.LineColor = theme.LineChartLine
 	lc.Mode = "braille"
 	lc.DotStyle = '•'
 	lc.axisXLebelGap = 2
@@ -87,8 +87,8 @@ func NewLineChart() *LineChart {
 
 // one cell contains two data points
 // so the capicity is 2x as dot-mode
-func (lc *LineChart) renderBraille() Buffer {
-	buf := NewBuffer()
+func (lc *LineChart) renderBraille() []Point {
+	ps := []Point{}
 
 	// return: b -> which cell should the point be in
 	//         m -> in the cell, divided into 4 equal height levels, which subcell?
@@ -104,48 +104,44 @@ func (lc *LineChart) renderBraille() Buffer {
 		b1, m1 := getPos(lc.Data[2*i+1])
 
 		if b0 == b1 {
-			c := Cell{
-				Ch: braillePatterns[[2]int{m0, m1}],
-				Bg: lc.Bg,
-				Fg: lc.LineColor,
-			}
-			y := lc.innerArea.Min.Y + lc.innerArea.Dy() - 3 - b0
-			x := lc.innerArea.Min.X + lc.labelYSpace + 1 + i
-			buf.Set(x, y, c)
+			p := Point{}
+			p.Ch = braillePatterns[[2]int{m0, m1}]
+			p.Bg = lc.BgColor
+			p.Fg = lc.LineColor
+			p.Y = lc.innerY + lc.innerHeight - 3 - b0
+			p.X = lc.innerX + lc.labelYSpace + 1 + i
+			ps = append(ps, p)
 		} else {
-			c0 := Cell{Ch: lSingleBraille[m0],
-				Fg: lc.LineColor,
-				Bg: lc.Bg}
-			x0 := lc.innerArea.Min.X + lc.labelYSpace + 1 + i
-			y0 := lc.innerArea.Min.Y + lc.innerArea.Dy() - 3 - b0
-			buf.Set(x0, y0, c0)
-
-			c1 := Cell{Ch: rSingleBraille[m1],
-				Fg: lc.LineColor,
-				Bg: lc.Bg}
-			x1 := lc.innerArea.Min.X + lc.labelYSpace + 1 + i
-			y1 := lc.innerArea.Min.Y + lc.innerArea.Dy() - 3 - b1
-			buf.Set(x1, y1, c1)
+			p0 := newPointWithAttrs(lSingleBraille[m0],
+				lc.innerX+lc.labelYSpace+1+i,
+				lc.innerY+lc.innerHeight-3-b0,
+				lc.LineColor,
+				lc.BgColor)
+			p1 := newPointWithAttrs(rSingleBraille[m1],
+				lc.innerX+lc.labelYSpace+1+i,
+				lc.innerY+lc.innerHeight-3-b1,
+				lc.LineColor,
+				lc.BgColor)
+			ps = append(ps, p0, p1)
 		}
 
 	}
-	return buf
+	return ps
 }
 
-func (lc *LineChart) renderDot() Buffer {
-	buf := NewBuffer()
+func (lc *LineChart) renderDot() []Point {
+	ps := []Point{}
 	for i := 0; i < len(lc.Data) && i < lc.axisXWidth; i++ {
-		c := Cell{
-			Ch: lc.DotStyle,
-			Fg: lc.LineColor,
-			Bg: lc.Bg,
-		}
-		x := lc.innerArea.Min.X + lc.labelYSpace + 1 + i
-		y := lc.innerArea.Min.Y + lc.innerArea.Dy() - 3 - int((lc.Data[i]-lc.bottomValue)/lc.scale+0.5)
-		buf.Set(x, y, c)
+		p := Point{}
+		p.Ch = lc.DotStyle
+		p.Fg = lc.LineColor
+		p.Bg = lc.BgColor
+		p.X = lc.innerX + lc.labelYSpace + 1 + i
+		p.Y = lc.innerY + lc.innerHeight - 3 - int((lc.Data[i]-lc.bottomValue)/lc.scale+0.5)
+		ps = append(ps, p)
 	}
 
-	return buf
+	return ps
 }
 
 func (lc *LineChart) calcLabelX() {
@@ -224,9 +220,9 @@ func (lc *LineChart) calcLayout() {
 	lc.maxY = lc.Data[0]
 
 	// valid visible range
-	vrange := lc.innerArea.Dx()
+	vrange := lc.innerWidth
 	if lc.Mode == "braille" {
-		vrange = 2 * lc.innerArea.Dx()
+		vrange = 2 * lc.innerWidth
 	}
 	if vrange > len(lc.Data) {
 		vrange = len(lc.Data)
@@ -251,30 +247,40 @@ func (lc *LineChart) calcLayout() {
 		lc.topValue = lc.maxY + 0.2*span
 	}
 
-	lc.axisYHeight = lc.innerArea.Dy() - 2
+	lc.axisYHeight = lc.innerHeight - 2
 	lc.calcLabelY()
 
-	lc.axisXWidth = lc.innerArea.Dx() - 1 - lc.labelYSpace
+	lc.axisXWidth = lc.innerWidth - 1 - lc.labelYSpace
 	lc.calcLabelX()
 
-	lc.drawingX = lc.innerArea.Min.X + 1 + lc.labelYSpace
-	lc.drawingY = lc.innerArea.Min.Y
+	lc.drawingX = lc.innerX + 1 + lc.labelYSpace
+	lc.drawingY = lc.innerY
 }
 
-func (lc *LineChart) plotAxes() Buffer {
-	buf := NewBuffer()
+func (lc *LineChart) plotAxes() []Point {
+	origY := lc.innerY + lc.innerHeight - 2
+	origX := lc.innerX + lc.labelYSpace
 
-	origY := lc.innerArea.Min.Y + lc.innerArea.Dy() - 2
-	origX := lc.innerArea.Min.X + lc.labelYSpace
-
-	buf.Set(origX, origY, Cell{Ch: ORIGIN, Fg: lc.AxesColor, Bg: lc.Bg})
+	ps := []Point{newPointWithAttrs(ORIGIN, origX, origY, lc.AxesColor, lc.BgColor)}
 
 	for x := origX + 1; x < origX+lc.axisXWidth; x++ {
-		buf.Set(x, origY, Cell{Ch: HDASH, Fg: lc.AxesColor, Bg: lc.Bg})
+		p := Point{}
+		p.X = x
+		p.Y = origY
+		p.Bg = lc.BgColor
+		p.Fg = lc.AxesColor
+		p.Ch = HDASH
+		ps = append(ps, p)
 	}
 
 	for dy := 1; dy <= lc.axisYHeight; dy++ {
-		buf.Set(origX, origY-dy, Cell{Ch: VDASH, Fg: lc.AxesColor, Bg: lc.Bg})
+		p := Point{}
+		p.X = origX
+		p.Y = origY - dy
+		p.Bg = lc.BgColor
+		p.Fg = lc.AxesColor
+		p.Ch = VDASH
+		ps = append(ps, p)
 	}
 
 	// x label
@@ -284,14 +290,13 @@ func (lc *LineChart) plotAxes() Buffer {
 			break
 		}
 		for j, r := range rs {
-			c := Cell{
-				Ch: r,
-				Fg: lc.AxesColor,
-				Bg: lc.Bg,
-			}
-			x := origX + oft + j
-			y := lc.innerArea.Min.Y + lc.innerArea.Dy() - 1
-			buf.Set(x, y, c)
+			p := Point{}
+			p.Ch = r
+			p.Fg = lc.AxesColor
+			p.Bg = lc.BgColor
+			p.X = origX + oft + j
+			p.Y = lc.innerY + lc.innerHeight - 1
+			ps = append(ps, p)
 		}
 		oft += len(rs) + lc.axisXLebelGap
 	}
@@ -299,31 +304,33 @@ func (lc *LineChart) plotAxes() Buffer {
 	// y labels
 	for i, rs := range lc.labelY {
 		for j, r := range rs {
-			buf.Set(
-				lc.innerArea.Min.X+j,
-				origY-i*(lc.axisYLebelGap+1),
-				Cell{Ch: r, Fg: lc.AxesColor, Bg: lc.Bg})
+			p := Point{}
+			p.Ch = r
+			p.Fg = lc.AxesColor
+			p.Bg = lc.BgColor
+			p.X = lc.innerX + j
+			p.Y = origY - i*(lc.axisYLebelGap+1)
+			ps = append(ps, p)
 		}
 	}
 
-	return buf
+	return ps
 }
 
 // Buffer implements Bufferer interface.
-func (lc *LineChart) Buffer() Buffer {
-	buf := lc.Block.Buffer()
-
+func (lc *LineChart) Buffer() []Point {
+	ps := lc.Block.Buffer()
 	if lc.Data == nil || len(lc.Data) == 0 {
-		return buf
+		return ps
 	}
 	lc.calcLayout()
-	buf.Merge(lc.plotAxes())
+	ps = append(ps, lc.plotAxes()...)
 
 	if lc.Mode == "dot" {
-		buf.Merge(lc.renderDot())
+		ps = append(ps, lc.renderDot()...)
 	} else {
-		buf.Merge(lc.renderBraille())
+		ps = append(ps, lc.renderBraille()...)
 	}
 
-	return buf
+	return lc.Block.chopOverflow(ps)
 }

@@ -1,5 +1,8 @@
 # termui [![Build Status](https://travis-ci.org/gizak/termui.svg?branch=master)](https://travis-ci.org/gizak/termui) [![Doc Status](https://godoc.org/github.com/gizak/termui?status.png)](https://godoc.org/github.com/gizak/termui)
 
+## Update 23/06/2015
+Pull requests and master branch are freezing, waiting for merging from `refactoring` branch.
+
 ## Notice
 termui comes with ABSOLUTELY NO WARRANTY, and there is a breaking change coming up (see refactoring branch) which will change the `Bufferer` interface and many others. These changes reduce calculation overhead and introduce a new drawing buffer with better capacibilities. We will step into the next stage (call it beta) after merging these changes.
 
@@ -40,7 +43,7 @@ Expressive syntax, using [12 columns grid system](http://www.w3schools.com/boots
 
 ## Installation
 
-	go get github.com/gizak/termui
+	go get -u github.com/gizak/termui
 
 ## Usage
 
@@ -113,11 +116,6 @@ The `helloworld` color scheme drops in some colors!
 [demo code](https://github.com/gizak/termui/blob/master/example/list.go)
 
 <img src="./example/list.png" alt="list" type="image/png" width="200">
-
-#### Colored List
-[demo code](https://github.com/gizak/termui/blob/master/example/coloredList.go)
-
-TODO: Image (let's wait until the implementation is finished).
 
 #### Gauge
 [demo code](https://github.com/gizak/termui/blob/master/example/gauge.go)

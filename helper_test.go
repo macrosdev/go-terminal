@@ -7,20 +7,22 @@ package termui
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/davecgh/go-spew/spew"
 )
 
 func TestStr2Rune(t *testing.T) {
 	s := "你好,世界."
 	rs := str2runes(s)
 	if len(rs) != 6 {
-		t.Error(t)
+		t.Error()
 	}
 }
 
 func TestWidth(t *testing.T) {
 	s0 := "つのだ☆HIRO"
 	s1 := "11111111111"
+	spew.Dump(s0)
+	spew.Dump(s1)
 	// above not align for setting East Asian Ambiguous to wide!!
 
 	if strWidth(s0) != strWidth(s1) {
@@ -53,18 +55,4 @@ func TestTrim(t *testing.T) {
 	if string(trimStr2Runes(s, 15)) != "つのだ☆HIRO" {
 		t.Error("avoid trim failed")
 	}
-}
-
-func TestTrimStrIfAppropriate_NoTrim(t *testing.T) {
-	assert.Equal(t, "hello", TrimStrIfAppropriate("hello", 5))
-}
-
-func TestTrimStrIfAppropriate(t *testing.T) {
-	assert.Equal(t, "hel…", TrimStrIfAppropriate("hello", 4))
-	assert.Equal(t, "h…", TrimStrIfAppropriate("hello", 2))
-}
-
-func TestStringToAttribute(t *testing.T) {
-	assert.Equal(t, ColorRed, StringToAttribute("ReD"))
-	assert.Equal(t, ColorRed|AttrBold, StringToAttribute("RED, bold"))
 }

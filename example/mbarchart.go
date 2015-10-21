@@ -15,7 +15,7 @@ func main() {
 	}
 	defer termui.Close()
 
-	//termui.UseTheme("helloworld")
+	termui.UseTheme("helloworld")
 
 	bc := termui.NewMBarChart()
 	math := []int{90, 85, 90, 80}
@@ -27,10 +27,10 @@ func main() {
 	bc.Data[2] = science
 	bc.Data[3] = compsci
 	studentsName := []string{"Ken", "Rob", "Dennis", "Linus"}
-	bc.BorderLabel = "Student's Marks X-Axis=Name Y-Axis=Marks[Math,English,Science,ComputerScience] in %"
+	bc.Border.Label = "Student's Marks X-Axis=Name Y-Axis=Marks[Math,English,Science,ComputerScience] in %"
 	bc.Width = 100
-	bc.Height = 30
-	bc.Y = 0
+	bc.Height = 50
+	bc.Y = 10
 	bc.BarWidth = 10
 	bc.DataLabels = studentsName
 	bc.ShowScale = true //Show y_axis scale value (min and max)
@@ -46,9 +46,5 @@ func main() {
 
 	termui.Render(bc)
 
-	termui.Handle("/sys/kbd/q", func(termui.Event) {
-		termui.StopLoop()
-	})
-	termui.Loop()
-
+	<-termui.EventCh()
 }

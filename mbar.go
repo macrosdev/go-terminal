@@ -48,16 +48,16 @@ type MBarChart struct {
 // NewBarChart returns a new *BarChart with current theme.
 func NewMBarChart() *MBarChart {
 	bc := &MBarChart{Block: *NewBlock()}
-	bc.BarColor[0] = ThemeAttr("mbarchart.bar.bg")
-	bc.NumColor[0] = ThemeAttr("mbarchart.num.fg")
-	bc.TextColor = ThemeAttr("mbarchart.text.fg")
+	bc.BarColor[0] = theme.MBarChartBar
+	bc.NumColor[0] = theme.MBarChartNum
+	bc.TextColor = theme.MBarChartText
 	bc.BarGap = 1
 	bc.BarWidth = 3
 	return bc
 }
 
 func (bc *MBarChart) layout() {
-	bc.numBar = bc.innerArea.Dx() / (bc.BarGap + bc.BarWidth)
+	bc.numBar = bc.innerWidth / (bc.BarGap + bc.BarWidth)
 	bc.labels = make([][]rune, bc.numBar)
 	DataLen := 0
 	LabelLen := len(bc.DataLabels)
@@ -129,9 +129,9 @@ func (bc *MBarChart) layout() {
 	if bc.ShowScale {
 		s := fmt.Sprintf("%d", bc.max)
 		bc.maxScale = trimStr2Runes(s, len(s))
-		bc.scale = float64(bc.max) / float64(bc.innerArea.Dy()-2)
+		bc.scale = float64(bc.max) / float64(bc.innerHeight-2)
 	} else {
-		bc.scale = float64(bc.max) / float64(bc.innerArea.Dy()-1)
+		bc.scale = float64(bc.max) / float64(bc.innerHeight-1)
 	}
 
 }
@@ -144,8 +144,8 @@ func (bc *MBarChart) SetMax(max int) {
 }
 
 // Buffer implements Bufferer interface.
-func (bc *MBarChart) Buffer() Buffer {
-	buf := bc.Block.Buffer()
+func (bc *MBarChart) Buffer() []Point {
+	ps := bc.Block.Buffer()
 	bc.layout()
 	var oftX int
 
@@ -157,17 +157,15 @@ func (bc *MBarChart) Buffer() Buffer {
 			// plot bars
 			for j := 0; j < bc.BarWidth; j++ {
 				for k := 0; k < h; k++ {
-					c := Cell{
-						Ch: ' ',
-						Bg: bc.BarColor[i1],
-					}
+					p := Point{}
+					p.Ch = ' '
+					p.Bg = bc.BarColor[i1]
 					if bc.BarColor[i1] == ColorDefault { // when color is default, space char treated as transparent!
-						c.Bg |= AttrReverse
+						p.Bg |= AttrReverse
 					}
-					x := bc.innerArea.Min.X + i*(bc.BarWidth+bc.BarGap) + j
-					y := bc.innerArea.Min.Y + bc.innerArea.Dy() - 2 - k - ph
-					buf.Set(x, y, c)
-
+					p.X = bc.innerX + i*(bc.BarWidth+bc.BarGap) + j
+					p.Y = bc.innerY + bc.innerHeight - 2 - k - ph
+					ps = append(ps, p)
 				}
 			}
 			ph += h
@@ -175,14 +173,13 @@ func (bc *MBarChart) Buffer() Buffer {
 		// plot text
 		for j, k := 0, 0; j < len(bc.labels[i]); j++ {
 			w := charWidth(bc.labels[i][j])
-			c := Cell{
-				Ch: bc.labels[i][j],
-				Bg: bc.Bg,
-				Fg: bc.TextColor,
-			}
-			y := bc.innerArea.Min.Y + bc.innerArea.Dy() - 1
-			x := bc.innerArea.Max.X + oftX + ((bc.BarWidth - len(bc.labels[i])) / 2) + k
-			buf.Set(x, y, c)
+			p := Point{}
+			p.Ch = bc.labels[i][j]
+			p.Bg = bc.BgColor
+			p.Fg = bc.TextColor
+			p.Y = bc.innerY + bc.innerHeight - 1
+			p.X = bc.innerX + oftX + ((bc.BarWidth - len(bc.labels[i])) / 2) + k
+			ps = append(ps, p)
 			k += w
 		}
 		// plot num
@@ -190,20 +187,19 @@ func (bc *MBarChart) Buffer() Buffer {
 		for i1 := 0; i1 < bc.numStack; i1++ {
 			h := int(float64(bc.Data[i1][i]) / bc.scale)
 			for j := 0; j < len(bc.dataNum[i1][i]) && h > 0; j++ {
-				c := Cell{
-					Ch: bc.dataNum[i1][i][j],
-					Fg: bc.NumColor[i1],
-					Bg: bc.BarColor[i1],
-				}
+				p := Point{}
+				p.Ch = bc.dataNum[i1][i][j]
+				p.Fg = bc.NumColor[i1]
+				p.Bg = bc.BarColor[i1]
 				if bc.BarColor[i1] == ColorDefault { // the same as above
-					c.Bg |= AttrReverse
+					p.Bg |= AttrReverse
 				}
 				if h == 0 {
-					c.Bg = bc.Bg
+					p.Bg = bc.BgColor
 				}
-				x := bc.innerArea.Min.X + oftX + (bc.BarWidth-len(bc.dataNum[i1][i]))/2 + j
-				y := bc.innerArea.Min.Y + bc.innerArea.Dy() - 2 - ph
-				buf.Set(x, y, c)
+				p.X = bc.innerX + oftX + (bc.BarWidth-len(bc.dataNum[i1][i]))/2 + j
+				p.Y = bc.innerY + bc.innerHeight - 2 - ph
+				ps = append(ps, p)
 			}
 			ph += h
 		}
@@ -212,31 +208,26 @@ func (bc *MBarChart) Buffer() Buffer {
 	if bc.ShowScale {
 		//Currently bar graph only supprts data range from 0 to MAX
 		//Plot 0
-		c := Cell{
-			Ch: '0',
-			Bg: bc.Bg,
-			Fg: bc.TextColor,
-		}
-
-		y := bc.innerArea.Min.Y + bc.innerArea.Dy() - 2
-		x := bc.X
-		buf.Set(x, y, c)
+		p := Point{}
+		p.Ch = '0'
+		p.Bg = bc.BgColor
+		p.Fg = bc.TextColor
+		p.Y = bc.innerY + bc.innerHeight - 2
+		p.X = bc.X
+		ps = append(ps, p)
 
 		//Plot the maximum sacle value
 		for i := 0; i < len(bc.maxScale); i++ {
-			c := Cell{
-				Ch: bc.maxScale[i],
-				Bg: bc.Bg,
-				Fg: bc.TextColor,
-			}
-
-			y := bc.innerArea.Min.Y
-			x := bc.X + i
-
-			buf.Set(x, y, c)
+			p := Point{}
+			p.Ch = bc.maxScale[i]
+			p.Bg = bc.BgColor
+			p.Fg = bc.TextColor
+			p.Y = bc.innerY
+			p.X = bc.X + i
+			ps = append(ps, p)
 		}
 
 	}
 
-	return buf
+	return bc.Block.chopOverflow(ps)
 }

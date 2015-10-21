@@ -63,10 +63,12 @@ func (c Canvas) Unset(x, y int) {
 }
 
 // Buffer returns un-styled points
-func (c Canvas) Buffer() Buffer {
-	buf := NewBuffer()
+func (c Canvas) Buffer() []Point {
+	ps := make([]Point, len(c))
+	i := 0
 	for k, v := range c {
-		buf.Set(k[0], k[1], Cell{Ch: v + brailleBase})
+		ps[i] = newPoint(v+brailleBase, k[0], k[1])
+		i++
 	}
-	return buf
+	return ps
 }
