@@ -92,8 +92,12 @@ func (d *Block) Buffer() []Point {
 	for i := 0; i < d.innerWidth; i++ {
 		for j := 0; j < d.innerHeight; j++ {
 			p := Point{}
-			p.X = d.X + 1 + i
-			p.Y = d.Y + 1 + j
+			p.X = d.X + i
+			p.Y = d.Y + j
+			if d.HasBorder {
+				p.X++
+				p.Y++
+			}
 			p.Ch = ' '
 			p.Bg = d.BgColor
 			ps = append(ps, p)
@@ -139,4 +143,24 @@ func (d *Block) chopOverflow(ps []Point) []Point {
 		}
 	}
 	return nps
+}
+
+func (b Block) InnerWidth() int {
+	return b.innerWidth
+}
+
+func (b Block) InnerHeight() int {
+	return b.innerHeight
+}
+
+func (b Block) InnerX() int {
+	return b.innerX
+}
+
+func (b Block) InnerY() int {
+	return b.innerY
+}
+
+func (b *Block) Align() {
+	b.align()
 }
