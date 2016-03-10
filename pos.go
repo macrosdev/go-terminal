@@ -1,7 +1,3 @@
-// Copyright 2016 Zack Guo <gizak@icloud.com>. All rights reserved.
-// Use of this source code is governed by a MIT license that can
-// be found in the LICENSE file.
-
 package termui
 
 import "image"
@@ -70,9 +66,6 @@ func MoveArea(a image.Rectangle, dx, dy int) image.Rectangle {
 	return a
 }
 
-var termWidth int
-var termHeight int
-
 func TermRect() image.Rectangle {
-	return image.Rect(0, 0, termWidth, termHeight)
+	return image.Rect(0, 0, TermWidth(), TermHeight())
 }

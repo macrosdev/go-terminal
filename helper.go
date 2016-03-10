@@ -1,4 +1,4 @@
-// Copyright 2016 Zack Guo <gizak@icloud.com>. All rights reserved.
+// Copyright 2015 Zack Guo <gizak@icloud.com>. All rights reserved.
 // Use of this source code is governed by a MIT license that can
 // be found in the LICENSE file.
 
@@ -211,4 +211,12 @@ func DTrimTxCls(cs []Cell, w int) []Cell {
 	}
 
 	return rt
+}
+
+func CellsToStr(cs []Cell) string {
+	str := ""
+	for _, c := range cs {
+		str += string(c.Ch)
+	}
+	return str
 }

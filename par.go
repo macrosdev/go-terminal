@@ -1,4 +1,4 @@
-// Copyright 2016 Zack Guo <gizak@icloud.com>. All rights reserved.
+// Copyright 2015 Zack Guo <gizak@icloud.com>. All rights reserved.
 // Use of this source code is governed by a MIT license that can
 // be found in the LICENSE file.
 
@@ -16,6 +16,7 @@ type Par struct {
 	Text        string
 	TextFgColor Attribute
 	TextBgColor Attribute
+	WrapLength  int // words wrap limit. Note it may not work properly with multi-width char
 }
 
 // NewPar returns a new *Par with given text as its content.
@@ -25,6 +26,7 @@ func NewPar(s string) *Par {
 		Text:        s,
 		TextFgColor: ThemeAttr("par.text.fg"),
 		TextBgColor: ThemeAttr("par.text.bg"),
+		WrapLength:  0,
 	}
 }
 
@@ -34,6 +36,13 @@ func (p *Par) Buffer() Buffer {
 
 	fg, bg := p.TextFgColor, p.TextBgColor
 	cs := DefaultTxBuilder.Build(p.Text, fg, bg)
+
+	// wrap if WrapLength set
+	if p.WrapLength < 0 {
+		cs = wrapTx(cs, p.Width-2)
+	} else if p.WrapLength > 0 {
+		cs = wrapTx(cs, p.WrapLength)
+	}
 
 	y, x, n := 0, 0, 0
 	for y < p.innerArea.Dy() && n < len(cs) {
