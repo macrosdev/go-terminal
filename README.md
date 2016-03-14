@@ -12,6 +12,8 @@ Now version v2 has arrived! It brings new event system, new theme system, new `B
 
 	go get -u github.com/gizak/termui
 
+It is recommanded to use locked deps by using [glide](https://glide.sh): move to `termui` src directory then run `glide up`.
+
 For the compatible reason, you can choose to install the legacy version of `termui`:
 
 	go get gopkg.in/gizak/termui.v1
@@ -24,7 +26,7 @@ To use `termui`, the very first thing you may want to know is how to manage layo
 
 __Absolute layout__
 
-Each widget has an underlying block structure which basically is a box model. It has border, label and padding properties. A border of a widget can be chosen to hide or display (with its border label), you can pick a different front/back colour for the border as well. To display such a widget at a specific location in terminal window, you need to assign `.X`, `.Y`, `.Height`, `.Width` values for each widget before send it to `.Render`. Let's demonstrate these by a code snippet:
+Each widget has an underlying block structure which basically is a box model. It has border, label and padding properties. A border of a widget can be chosen to hide or display (with its border label), you can pick a different front/back colour for the border as well. To display such a widget at a specific location in terminal window, you need to assign `.X`, `.Y`, `.Height`, `.Width` values for each widget before sending it to `.Render`. Let's demonstrate these by a code snippet:
 
 `````go
 	import ui "github.com/gizak/termui" // <- ui shortcut, optional
@@ -48,7 +50,7 @@ Each widget has an underlying block structure which basically is a box model. It
 		g.Width = 50
 		g.Height = 3
 		g.Y = 11
-		g.Border.Label = "Gauge"
+		g.BorderLabel = "Gauge"
 		g.BarColor = ui.ColorRed
 		g.BorderFg = ui.ColorWhite
 		g.BorderLabelFg = ui.ColorCyan
@@ -65,7 +67,7 @@ __Grid layout:__
 
 <img src="./_example/grid.gif" alt="grid" width="60%">
 
-Grid layout uses [12 columns grid system](http://www.w3schools.com/bootstrap/bootstrap_grid_system.asp) with expressive syntax. To use `Grid`, all we need to do is build a widget tree consisting of `Row`s and Cols (Actually a Col is also a `Row` but with a widget endpoint attached).
+Grid layout uses [12 columns grid system](http://www.w3schools.com/bootstrap/bootstrap_grid_system.asp) with expressive syntax. To use `Grid`, all we need to do is build a widget tree consisting of `Row`s and `Col`s (Actually a `Col` is also a `Row` but with a widget endpoint attached).
 
 ```go
 	import ui "github.com/gizak/termui"
@@ -93,22 +95,22 @@ Grid layout uses [12 columns grid system](http://www.w3schools.com/bootstrap/boo
 
 ```go
 	// handle key q pressing
-	termui.Handle("/sys/kbd/q", func(termui.Event) {
+	ui.Handle("/sys/kbd/q", func(ui.Event) {
 		// press q to quit
-		termui.StopLoop()
+		ui.StopLoop()
 	})
 
-	termui.Handle("/sys/kbd/C-x", func(termui.Event) {
+	ui.Handle("/sys/kbd/C-x", func(ui.Event) {
 		// handle Ctrl + x combination
 	})
 
-	termui.Handle("/sys/kbd", func(termui.Event) {
+	ui.Handle("/sys/kbd", func(ui.Event) {
 		// handle all other key pressing
 	})
 
 	// handle a 1s timer
-	termui.Handle("/timer/1s", func(e ui.Event) {
-		t := e.Data.(termui.EvtTimer)
+	ui.Handle("/timer/1s", func(e ui.Event) {
+		t := e.Data.(ui.EvtTimer)
 		// t is a EvtTimer
 		if t.Count%2 ==0 {
 			// do something
@@ -129,6 +131,7 @@ Click image to see the corresponding demo codes.
 [<img src="./_example/barchart.png" alt="barchart" type="image/png" width="45%">](https://github.com/gizak/termui/blob/master/_example/barchart.go)
 [<img src="./_example/mbarchart.png" alt="barchart" type="image/png" width="45%">](https://github.com/gizak/termui/blob/master/_example/mbarchart.go)
 [<img src="./_example/sparklines.png" alt="sparklines" type="image/png" width="45%">](https://github.com/gizak/termui/blob/master/_example/sparklines.go)
+[<img src="./_example/table.png" alt="table" type="image/png" width="45%">](https://github.com/gizak/termui/blob/master/_example/table.go)
 
 ## GoDoc
 

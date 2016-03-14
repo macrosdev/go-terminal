@@ -1,10 +1,6 @@
-// Copyright 2015 Zack Guo <gizak@icloud.com>. All rights reserved.
+// Copyright 2017 Zack Guo <zack.y.guo@gmail.com>. All rights reserved.
 // Use of this source code is governed by a MIT license that can
 // be found in the LICENSE file.
-//
-// Portions of this file uses [termbox-go](https://github.com/nsf/termbox-go/blob/54b74d087b7c397c402d0e3b66d2ccb6eaf5c2b4/api_common.go)
-// by [authors](https://github.com/nsf/termbox-go/blob/master/AUTHORS)
-// under [license](https://github.com/nsf/termbox-go/blob/master/LICENSE)
 
 package termui
 
@@ -226,6 +222,14 @@ func findMatch(mux map[string]func(Event), path string) string {
 
 }
 
+// Remove all existing defined Handlers from the map
+func (es *EvtStream) ResetHandlers() {
+	for Path, _ := range es.Handlers {
+		delete(es.Handlers, Path)
+	}
+	return
+}
+
 func (es *EvtStream) match(path string) string {
 	return findMatch(es.Handlers, path)
 }
@@ -306,7 +310,7 @@ func NewTimerCh(du time.Duration) chan Event {
 	return t
 }
 
-var DefualtHandler = func(e Event) {
+var DefaultHandler = func(e Event) {
 }
 
 var usrEvtCh = make(chan Event)

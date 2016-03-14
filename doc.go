@@ -1,4 +1,4 @@
-// Copyright 2015 Zack Guo <gizak@icloud.com>. All rights reserved.
+// Copyright 2017 Zack Guo <zack.y.guo@gmail.com>. All rights reserved.
 // Use of this source code is governed by a MIT license that can
 // be found in the LICENSE file.
 
@@ -19,9 +19,11 @@ A simplest example:
         g := ui.NewGauge()
         g.Percent = 50
         g.Width = 50
-        g.Border.Label = "Gauge"
+        g.BorderLabel = "Gauge"
 
         ui.Render(g)
+
+        ui.Loop()
     }
 */
 package termui

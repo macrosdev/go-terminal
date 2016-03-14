@@ -1,3 +1,7 @@
+// Copyright 2017 Zack Guo <zack.y.guo@gmail.com>. All rights reserved.
+// Use of this source code is governed by a MIT license that can
+// be found in the LICENSE file.
+
 package termui
 
 import (
@@ -35,6 +39,7 @@ var colorMap = map[string]Attribute{
 	"blue":    ColorBlue,
 	"black":   ColorBlack,
 	"cyan":    ColorCyan,
+	"yellow":  ColorYellow,
 	"white":   ColorWhite,
 	"default": ColorDefault,
 	"green":   ColorGreen,
