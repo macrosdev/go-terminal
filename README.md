@@ -12,8 +12,6 @@ Now version v2 has arrived! It brings new event system, new theme system, new `B
 
 	go get -u github.com/gizak/termui
 
-It is recommanded to use locked deps by using [glide](https://glide.sh): move to `termui` src directory then run `glide up`.
-
 For the compatible reason, you can choose to install the legacy version of `termui`:
 
 	go get gopkg.in/gizak/termui.v1
@@ -131,7 +129,6 @@ Click image to see the corresponding demo codes.
 [<img src="./_example/barchart.png" alt="barchart" type="image/png" width="45%">](https://github.com/gizak/termui/blob/master/_example/barchart.go)
 [<img src="./_example/mbarchart.png" alt="barchart" type="image/png" width="45%">](https://github.com/gizak/termui/blob/master/_example/mbarchart.go)
 [<img src="./_example/sparklines.png" alt="sparklines" type="image/png" width="45%">](https://github.com/gizak/termui/blob/master/_example/sparklines.go)
-[<img src="./_example/table.png" alt="table" type="image/png" width="45%">](https://github.com/gizak/termui/blob/master/_example/table.go)
 
 ## GoDoc
 

@@ -1,4 +1,4 @@
-// Copyright 2017 Zack Guo <zack.y.guo@gmail.com>. All rights reserved.
+// Copyright 2016 Zack Guo <gizak@icloud.com>. All rights reserved.
 // Use of this source code is governed by a MIT license that can
 // be found in the LICENSE file.
 
@@ -17,6 +17,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gizak/termui"
 	"github.com/gizak/termui/extra"
@@ -211,7 +212,7 @@ func NewCpuTabElems(width int) *CpuTabElems {
 	lc.Height = 12
 	lc.X = 0
 	lc.Mode = "dot"
-	lc.BorderLabel = "CPU"
+	lc.Border.Label = "CPU"
 	return &CpuTabElems{GMap: make(map[string]*termui.Gauge),
 		LChart: lc}
 }
@@ -221,7 +222,7 @@ func (cte *CpuTabElems) AddGauge(key string, Y int, width int) *termui.Gauge {
 	cte.GMap[key].Width = width
 	cte.GMap[key].Height = 3
 	cte.GMap[key].Y = Y
-	cte.GMap[key].BorderLabel = key
+	cte.GMap[key].Border.Label = key
 	cte.GMap[key].Percent = 0 //int(val.user + val.nice + val.system)
 	return cte.GMap[key]
 }
@@ -283,12 +284,12 @@ func main() {
 
 	termWidth := 70
 
-	//termui.UseTheme("helloworld")
+	termui.UseTheme("helloworld")
 
 	header := termui.NewPar("Press q to quit, Press j or k to switch tabs")
 	header.Height = 1
 	header.Width = 50
-	header.Border = false
+	header.HasBorder = false
 	header.TextBgColor = termui.ColorBlue
 
 	tabCpu := extra.NewTab("CPU")
@@ -297,7 +298,7 @@ func main() {
 	tabpane := extra.NewTabpane()
 	tabpane.Y = 1
 	tabpane.Width = 30
-	tabpane.Border = false
+	tabpane.HasBorder = false
 
 	cs, errcs := getCpusStatsMap()
 	cpusStats := NewCpusStats(cs)
@@ -335,35 +336,37 @@ func main() {
 
 	termui.Render(header, tabpane)
 
-	termui.Handle("/sys/kbd/q", func(termui.Event) {
-		termui.StopLoop()
-	})
+	evt := termui.EventCh()
+	for {
+		select {
+		case e := <-evt:
+			if e.Type == termui.EventKey {
+				switch e.Ch {
+				case 'q':
+					return
+				case 'j':
+					tabpane.SetActiveLeft()
+					termui.Render(header, tabpane)
+				case 'k':
+					tabpane.SetActiveRight()
+					termui.Render(header, tabpane)
+				}
+			}
+		case <-time.After(time.Second):
+			cs, errcs := getCpusStatsMap()
+			if errcs != nil {
+				panic(errcs)
+			}
+			cpusStats.tick(cs)
+			cpuTabElems.Update(*cpusStats)
 
-	termui.Handle("/sys/kbd/j", func(termui.Event) {
-		tabpane.SetActiveLeft()
-		termui.Render(header, tabpane)
-	})
+			ms, errm := getMemStats()
+			if errm != nil {
+				panic(errm)
+			}
+			memTabElems.Update(ms)
 
-	termui.Handle("/sys/kbd/k", func(termui.Event) {
-		tabpane.SetActiveRight()
-		termui.Render(header, tabpane)
-	})
-
-	termui.Handle("/timer/1s", func(e termui.Event) {
-		cs, errcs := getCpusStatsMap()
-		if errcs != nil {
-			panic(errcs)
+			termui.Render(header, tabpane)
 		}
-		cpusStats.tick(cs)
-		cpuTabElems.Update(*cpusStats)
-
-		ms, errm := getMemStats()
-		if errm != nil {
-			panic(errm)
-		}
-		memTabElems.Update(ms)
-		termui.Render(header, tabpane)
-	})
-
-	termui.Loop()
+	}
 }

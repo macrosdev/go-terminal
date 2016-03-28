@@ -1,4 +1,4 @@
-// Copyright 2017 Zack Guo <zack.y.guo@gmail.com>. All rights reserved.
+// Copyright 2016 Zack Guo <gizak@icloud.com>. All rights reserved.
 // Use of this source code is governed by a MIT license that can
 // be found in the LICENSE file.
 
@@ -11,7 +11,7 @@ import "fmt"
    bc := termui.NewBarChart()
    data := []int{3, 2, 5, 3, 9, 5}
    bclabels := []string{"S0", "S1", "S2", "S3", "S4", "S5"}
-   bc.BorderLabel = "Bar Chart"
+   bc.Border.Label = "Bar Chart"
    bc.Data = data
    bc.Width = 26
    bc.Height = 10
@@ -29,7 +29,6 @@ type BarChart struct {
 	DataLabels []string
 	BarWidth   int
 	BarGap     int
-	CellChar   rune
 	labels     [][]rune
 	dataNum    [][]rune
 	numBar     int
@@ -45,7 +44,6 @@ func NewBarChart() *BarChart {
 	bc.TextColor = ThemeAttr("barchart.text.fg")
 	bc.BarGap = 1
 	bc.BarWidth = 3
-	bc.CellChar = ' '
 	return bc
 }
 
@@ -89,27 +87,16 @@ func (bc *BarChart) Buffer() Buffer {
 	for i := 0; i < bc.numBar && i < len(bc.Data) && i < len(bc.DataLabels); i++ {
 		h := int(float64(bc.Data[i]) / bc.scale)
 		oftX := i * (bc.BarWidth + bc.BarGap)
-
-		barBg := bc.Bg
-		barFg := bc.BarColor
-
-		if bc.CellChar == ' ' {
-			barBg = bc.BarColor
-			barFg = ColorDefault
-			if bc.BarColor == ColorDefault { // the same as above
-				barBg |= AttrReverse
-			}
-		}
-
 		// plot bar
 		for j := 0; j < bc.BarWidth; j++ {
 			for k := 0; k < h; k++ {
 				c := Cell{
-					Ch: bc.CellChar,
-					Bg: barBg,
-					Fg: barFg,
+					Ch: ' ',
+					Bg: bc.BarColor,
 				}
-
+				if bc.BarColor == ColorDefault { // when color is default, space char treated as transparent!
+					c.Bg |= AttrReverse
+				}
 				x := bc.innerArea.Min.X + i*(bc.BarWidth+bc.BarGap) + j
 				y := bc.innerArea.Min.Y + bc.innerArea.Dy() - 2 - k
 				buf.Set(x, y, c)
@@ -133,9 +120,11 @@ func (bc *BarChart) Buffer() Buffer {
 			c := Cell{
 				Ch: bc.dataNum[i][j],
 				Fg: bc.NumColor,
-				Bg: barBg,
+				Bg: bc.BarColor,
 			}
-
+			if bc.BarColor == ColorDefault { // the same as above
+				c.Bg |= AttrReverse
+			}
 			if h == 0 {
 				c.Bg = bc.Bg
 			}

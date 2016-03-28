@@ -1,4 +1,4 @@
-// Copyright 2017 Zack Guo <zack.y.guo@gmail.com>. All rights reserved.
+// Copyright 2016 Zack Guo <gizak@icloud.com>. All rights reserved.
 // Use of this source code is governed by a MIT license that can
 // be found in the LICENSE file.
 
@@ -28,13 +28,14 @@ func (tab *Tab) AddBlocks(rs ...Bufferer) {
 	}
 }
 
-func (tab *Tab) Buffer() Buffer {
-	buf := NewBuffer()
+func (tab *Tab) Buffer() []Point {
+	points := []Point{}
 	for blockNum := 0; blockNum < len(tab.Blocks); blockNum++ {
-		b := tab.Blocks[blockNum]
-		buf.Merge(b.Buffer())
+		b := &tab.Blocks[blockNum]
+		blockPoints := (*b).Buffer()
+		points = append(points, blockPoints...)
 	}
-	return buf
+	return points
 }
 
 type Tabpane struct {
@@ -51,7 +52,7 @@ func NewTabpane() *Tabpane {
 		Block:          *NewBlock(),
 		activeTabIndex: 0,
 		offTabText:     0,
-		ActiveTabBg:    ThemeAttr("bg.tab.active")}
+		ActiveTabBg:    Theme().TabActiveBg}
 	return &tp
 }
 
@@ -110,35 +111,17 @@ func (tp *Tabpane) fitsWidth() bool {
 }
 
 func (tp *Tabpane) align() {
-	if !tp.fitsWidth() && !tp.Border {
+	if !tp.fitsWidth() && !tp.HasBorder {
 		tp.PaddingLeft += 1
 		tp.PaddingRight += 1
 		tp.Block.Align()
 	}
 }
 
-// bridge the old Point stuct
-type point struct {
-	X  int
-	Y  int
-	Ch rune
-	Fg Attribute
-	Bg Attribute
-}
-
-func buf2pt(b Buffer) []point {
-	ps := make([]point, 0, len(b.CellMap))
-	for k, c := range b.CellMap {
-		ps = append(ps, point{X: k.X, Y: k.Y, Ch: c.Ch, Fg: c.Fg, Bg: c.Bg})
-	}
-
-	return ps
-}
-
 // Adds the point only if it is visible in Tabpane.
 // Point can be invisible if concatenation of Tab's texts is widther then
 // innerWidth of Tabpane
-func (tp *Tabpane) addPoint(ptab []point, charOffset *int, oftX *int, points ...point) []point {
+func (tp *Tabpane) addPoint(ptab []Point, charOffset *int, oftX *int, points ...Point) []Point {
 	if *charOffset < tp.offTabText || tp.offTabText+tp.InnerWidth() < *charOffset {
 		*charOffset++
 		return ptab
@@ -153,10 +136,10 @@ func (tp *Tabpane) addPoint(ptab []point, charOffset *int, oftX *int, points ...
 }
 
 // Draws the point and redraws upper and lower border points (if it has one)
-func (tp *Tabpane) drawPointWithBorder(p point, ch rune, chbord rune, chdown rune, chup rune) []point {
-	var addp []point
+func (tp *Tabpane) drawPointWithBorder(p Point, ch rune, chbord rune, chdown rune, chup rune) []Point {
+	var addp []Point
 	p.Ch = ch
-	if tp.Border {
+	if tp.HasBorder {
 		p.Ch = chdown
 		p.Y = tp.InnerY() - 1
 		addp = append(addp, p)
@@ -169,8 +152,8 @@ func (tp *Tabpane) drawPointWithBorder(p point, ch rune, chbord rune, chdown run
 	return append(addp, p)
 }
 
-func (tp *Tabpane) Buffer() Buffer {
-	if tp.Border {
+func (tp *Tabpane) Buffer() []Point {
+	if tp.HasBorder {
 		tp.Height = 3
 	} else {
 		tp.Height = 1
@@ -178,16 +161,14 @@ func (tp *Tabpane) Buffer() Buffer {
 	if tp.Width > tp.posTabText[len(tp.Tabs)]+2 {
 		tp.Width = tp.posTabText[len(tp.Tabs)] + 2
 	}
-	buf := tp.Block.Buffer()
-	ps := []point{}
-
+	ps := tp.Block.Buffer()
 	tp.align()
 	if tp.InnerHeight() <= 0 || tp.InnerWidth() <= 0 {
-		return NewBuffer()
+		return nil
 	}
 	oftX := tp.InnerX()
 	charOffset := 0
-	pt := point{Bg: tp.BorderBg, Fg: tp.BorderFg}
+	pt := Point{Bg: tp.Border.BgColor, Fg: tp.Border.FgColor}
 	for i, tab := range tp.Tabs {
 
 		if i != 0 {
@@ -203,11 +184,11 @@ func (tp *Tabpane) Buffer() Buffer {
 		rs := []rune(tab.Label)
 		for k := 0; k < len(rs); k++ {
 
-			addp := make([]point, 0, 2)
-			if i == tp.activeTabIndex && tp.Border {
+			addp := make([]Point, 0, 2)
+			if i == tp.activeTabIndex && tp.HasBorder {
 				pt.Ch = ' '
 				pt.Y = tp.InnerY() + 1
-				pt.Bg = tp.BorderBg
+				pt.Bg = tp.Border.BgColor
 				addp = append(addp, pt)
 				pt.Bg = tp.ActiveTabBg
 			}
@@ -218,14 +199,14 @@ func (tp *Tabpane) Buffer() Buffer {
 			addp = append(addp, pt)
 			ps = tp.addPoint(ps, &charOffset, &oftX, addp...)
 		}
-		pt.Bg = tp.BorderBg
+		pt.Bg = tp.Border.BgColor
 
 		if !tp.fitsWidth() {
 			all := tp.checkAlignment()
 			pt.X = tp.InnerX() - 1
 
 			pt.Ch = '*'
-			if tp.Border {
+			if tp.HasBorder {
 				pt.Ch = VERTICAL_LINE
 			}
 			ps = append(ps, pt)
@@ -237,7 +218,7 @@ func (tp *Tabpane) Buffer() Buffer {
 
 			pt.X = tp.InnerX() + tp.InnerWidth()
 			pt.Ch = '*'
-			if tp.Border {
+			if tp.HasBorder {
 				pt.Ch = VERTICAL_LINE
 			}
 			ps = append(ps, pt)
@@ -249,7 +230,7 @@ func (tp *Tabpane) Buffer() Buffer {
 
 		//draw tab content below the Tabpane
 		if i == tp.activeTabIndex {
-			blockPoints := buf2pt(tab.Buffer())
+			blockPoints := tab.Buffer()
 			for i := 0; i < len(blockPoints); i++ {
 				blockPoints[i].Y += tp.Height + tp.Y
 			}
@@ -257,9 +238,5 @@ func (tp *Tabpane) Buffer() Buffer {
 		}
 	}
 
-	for _, v := range ps {
-		buf.Set(v.X, v.Y, NewCell(v.Ch, v.Fg, v.Bg))
-	}
-	buf.Sync()
-	return buf
+	return ps
 }

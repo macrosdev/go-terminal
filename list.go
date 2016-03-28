@@ -1,4 +1,4 @@
-// Copyright 2017 Zack Guo <zack.y.guo@gmail.com>. All rights reserved.
+// Copyright 2016 Zack Guo <gizak@icloud.com>. All rights reserved.
 // Use of this source code is governed by a MIT license that can
 // be found in the LICENSE file.
 
@@ -14,7 +14,7 @@ import "strings"
   strs := []string{
 		"[0] github.com/gizak/termui",
 		"[1] editbox.go",
-		"[2] interrupt.go",
+		"[2] iterrupt.go",
 		"[3] keyboard.go",
 		"[4] output.go",
 		"[5] random_out.go",
@@ -24,7 +24,7 @@ import "strings"
   ls := termui.NewList()
   ls.Items = strs
   ls.ItemFgColor = termui.ColorYellow
-  ls.BorderLabel = "List"
+  ls.Border.Label = "List"
   ls.Height = 7
   ls.Width = 25
   ls.Y = 0
