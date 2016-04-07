@@ -114,7 +114,6 @@ func main() {
 	ui.Handle("/sys/wnd/resize", func(e ui.Event) {
 		ui.Body.Width = ui.TermWidth()
 		ui.Body.Align()
-		ui.Clear()
 		ui.Render(ui.Body)
 	})
 
