@@ -29,7 +29,6 @@ type BarChart struct {
 	DataLabels []string
 	BarWidth   int
 	BarGap     int
-	CellChar   rune
 	labels     [][]rune
 	dataNum    [][]rune
 	numBar     int
@@ -45,7 +44,6 @@ func NewBarChart() *BarChart {
 	bc.TextColor = ThemeAttr("barchart.text.fg")
 	bc.BarGap = 1
 	bc.BarWidth = 3
-	bc.CellChar = ' '
 	return bc
 }
 
@@ -93,7 +91,7 @@ func (bc *BarChart) Buffer() Buffer {
 		for j := 0; j < bc.BarWidth; j++ {
 			for k := 0; k < h; k++ {
 				c := Cell{
-					Ch: bc.CellChar,
+					Ch: ' ',
 					Bg: bc.BarColor,
 				}
 				if bc.BarColor == ColorDefault { // when color is default, space char treated as transparent!
