@@ -69,6 +69,7 @@ type LineChart struct {
 	labelYSpace   int
 	maxY          float64
 	minY          float64
+	autoLabels    bool
 }
 
 // NewLineChart returns a new LineChart with current theme.
@@ -211,7 +212,8 @@ func (lc *LineChart) calcLabelY() {
 
 func (lc *LineChart) calcLayout() {
 	// set datalabels if it is not provided
-	if lc.DataLabels == nil || len(lc.DataLabels) == 0 {
+	if (lc.DataLabels == nil || len(lc.DataLabels) == 0) || lc.autoLabels {
+		lc.autoLabels = true
 		lc.DataLabels = make([]string, len(lc.Data))
 		for i := range lc.Data {
 			lc.DataLabels[i] = fmt.Sprint(i)
@@ -222,9 +224,6 @@ func (lc *LineChart) calcLayout() {
 	// update bound Y when drawing is gonna overflow
 	lc.minY = lc.Data[0]
 	lc.maxY = lc.Data[0]
-
-	lc.bottomValue = lc.minY
-	lc.topValue = lc.maxY
 
 	// valid visible range
 	vrange := lc.innerArea.Dx()
