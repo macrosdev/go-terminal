@@ -274,10 +274,6 @@ func Handle(path string, handler func(Event)) {
 	DefaultEvtStream.Handle(path, handler)
 }
 
-func ResetHandlers() {
-	DefaultEvtStream.ResetHandlers()
-}
-
 func Loop() {
 	DefaultEvtStream.Loop()
 }
