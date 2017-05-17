@@ -139,7 +139,7 @@ func NewSysEvtCh() chan Event {
 	return ec
 }
 
-var DefaultEvtStream = NewEvtStream()
+var DefaultEvtStream *EvtStream
 
 type EvtStream struct {
 	sync.RWMutex
@@ -272,6 +272,10 @@ func Merge(name string, ec chan Event) {
 
 func Handle(path string, handler func(Event)) {
 	DefaultEvtStream.Handle(path, handler)
+}
+
+func ResetHandlers() {
+	DefaultEvtStream.ResetHandlers()
 }
 
 func Loop() {
