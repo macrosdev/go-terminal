@@ -99,7 +99,9 @@ func crtTermboxEvt(e termbox.Event) Event {
 		ne.Path = "/sys/err"
 		ne.Data = err
 	case termbox.EventMouse:
-		m := evtMouse(e)
+		m := EvtMouse{}
+		m.X = e.MouseX
+		m.Y = e.MouseY
 		ne.Path = "/sys/mouse"
 		ne.Data = m
 	}
@@ -115,33 +117,6 @@ type EvtMouse struct {
 	X     int
 	Y     int
 	Press string
-}
-
-func evtMouse(e termbox.Event) (te EvtMouse) {
-	te.X = e.MouseX
-	te.Y = e.MouseY
-
-	var m string
-
-	switch e.Key {
-	case termbox.MouseLeft:
-		m = "MouseLeft"
-	case termbox.MouseMiddle:
-		m = "MouseMiddle"
-	case termbox.MouseRight:
-		m = "MouseRight"
-	case termbox.MouseRelease:
-		m = "MouseRelease"
-	case termbox.MouseWheelUp:
-		m = "MouseWheelUp"
-	case termbox.MouseWheelDown:
-		m = "MouseWheelDown"
-	default:
-		m = "Unknown_Mouse_Button"
-	}
-	te.Press = m
-
-	return
 }
 
 type EvtErr error
