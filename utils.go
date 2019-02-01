@@ -112,10 +112,6 @@ func RoundFloat64(x float64) float64 {
 	return math.Floor(x + 0.5)
 }
 
-func FloorFloat64(x float64) float64 {
-	return math.Floor(x)
-}
-
 func AbsInt(x int) int {
 	if x >= 0 {
 		return x
