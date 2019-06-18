@@ -14,7 +14,13 @@ termui is a cross-platform and fully-customizable terminal dashboard and widget 
 
 ## Installation
 
-If using Go 1.11 modules, it is not necessary to `go get` termui, since Go will automatically download any imported dependencies. However, do note that you have to include `/v3` at the end of the URL and before any sub-packages in the termui import statements as shown in the 'Hello World' example below.
+### Go modules
+
+It is not necessary to `go get` termui, since Go will automatically manage any imported dependencies for you. Do note that you have to include `/v3` in the import statements as shown in the 'Hello World' example below.
+
+### Dep
+
+Add with `dep ensure -add github.com/gizak/termui`. With Dep, `/v3` should *not* be included in the import statements.
 
 ## Hello World
 
@@ -55,7 +61,6 @@ func main() {
 - [Gauge](./_examples/gauge.go)
 - [Image](./_examples/image.go)
 - [List](./_examples/list.go)
-- [Tree](./_examples/tree.go)
 - [Paragraph](./_examples/paragraph.go)
 - [PieChart](./_examples/piechart.go)
 - [Plot](./_examples/plot.go) (for scatterplots and linecharts)
